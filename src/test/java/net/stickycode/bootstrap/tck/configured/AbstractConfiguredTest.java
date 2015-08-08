@@ -1,16 +1,13 @@
 package net.stickycode.bootstrap.tck.configured;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.StrictAssertions.assertThat;
 
 import javax.inject.Inject;
-
-import net.stickycode.bootstrap.tck.AbstractBootstrapTest;
 
 import org.junit.Ignore;
 import org.junit.Test;
 
-public class ConfiguredTest
-    extends AbstractBootstrapTest {
+public abstract class AbstractConfiguredTest {
 
   @Inject
   AConfiguredTuple tuple;

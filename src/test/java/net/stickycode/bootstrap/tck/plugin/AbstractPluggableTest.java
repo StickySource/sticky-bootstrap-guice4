@@ -14,8 +14,7 @@ import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.util.Types;
 
-public class PluggableTest
-    extends AbstractBootstrapTest {
+public abstract class AbstractPluggableTest {
 
   @Inject
   Set<Pluggable> plugged;

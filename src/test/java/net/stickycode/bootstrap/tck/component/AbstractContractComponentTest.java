@@ -1,15 +1,12 @@
 package net.stickycode.bootstrap.tck.component;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.StrictAssertions.assertThat;
 
 import javax.inject.Inject;
 
-import net.stickycode.bootstrap.tck.AbstractBootstrapTest;
-
 import org.junit.Test;
 
-public class ContractComponentTest
-    extends AbstractBootstrapTest {
+public abstract class AbstractContractComponentTest {
 
   @Inject
   Hydra concrete;

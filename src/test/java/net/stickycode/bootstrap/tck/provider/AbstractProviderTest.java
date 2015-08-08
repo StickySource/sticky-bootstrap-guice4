@@ -10,8 +10,7 @@ import net.stickycode.bootstrap.tck.component.StandardComponent;
 
 import org.junit.Test;
 
-public class ProviderTest
-    extends AbstractBootstrapTest {
+public abstract class AbstractProviderTest {
 
   @Inject
   Something something;

@@ -27,15 +27,9 @@
 
 	<dependencies>
 		<dependency>
-			<groupId>net.stickycode</groupId>
-			<artifactId>sticky-testutils</artifactId>
-			<version>[2.2,3)</version>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>net.stickycode.stereotype</groupId>
-			<artifactId>sticky-stereotype-configured</artifactId>
-			<version>[3.1,4)</version>
+			<groupId>net.stickycode.bootstrap</groupId>
+			<artifactId>sticky-bootstrap-tck</artifactId>
+			<version>[1,2)</version>
 			<scope>test</scope>
 		</dependency>
 
