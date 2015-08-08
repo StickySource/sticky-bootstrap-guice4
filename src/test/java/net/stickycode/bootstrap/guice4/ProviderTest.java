@@ -15,4 +15,6 @@ public class ProviderTest
     Injector injector = StickyGuice.createApplicationInjector(getClass().getPackage().getName());
     injector.injectMembers(this);
   }
+
+
 }
