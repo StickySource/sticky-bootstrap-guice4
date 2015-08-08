@@ -6,8 +6,6 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
-import net.stickycode.bootstrap.tck.AbstractBootstrapTest;
-
 import org.junit.Test;
 
 import com.google.inject.Injector;

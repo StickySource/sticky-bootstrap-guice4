@@ -1,14 +1,13 @@
 package net.stickycode.bootstrap.tck.provider;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.StrictAssertions.assertThat;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
 
-import net.stickycode.bootstrap.tck.AbstractBootstrapTest;
-import net.stickycode.bootstrap.tck.component.StandardComponent;
-
 import org.junit.Test;
+
+import net.stickycode.bootstrap.tck.component.StandardComponent;
 
 public abstract class AbstractProviderTest {
 
