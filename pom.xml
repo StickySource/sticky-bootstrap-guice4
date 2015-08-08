@@ -14,7 +14,7 @@
 	<version>1.2-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
-	<name>sticky-bootstrap-guice4.1</name>
+	<name>sticky-bootstrap-guice4-1</name>
 	<description>Bootstrap support for guice that will scan the given packages and contruct an injector for it</description>
 	<inceptionYear>2011</inceptionYear>
 	<url>http://www.StickyCode.net/bootstrap/sticky-bootstrap-guice3/</url>

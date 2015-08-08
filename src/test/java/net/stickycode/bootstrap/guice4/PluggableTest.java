@@ -13,7 +13,7 @@ import net.stickycode.bootstrap.guice3.StickyGuice;
 import net.stickycode.bootstrap.tck.plugin.AbstractPluggableTest;
 import net.stickycode.bootstrap.tck.plugin.PluggableContract;
 
-public class PluginTest
+public class PluggableTest
     extends AbstractPluggableTest {
 
   @Before
