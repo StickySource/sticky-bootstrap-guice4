@@ -14,9 +14,6 @@ package net.stickycode.bootstrap.guice4;
 
 import java.util.logging.LogManager;
 
-import net.stickycode.metadata.MetadataResolverRegistry;
-import net.stickycode.metadata.ReflectiveMetadataResolverRegistry;
-
 import org.slf4j.bridge.SLF4JBridgeHandler;
 
 import com.google.inject.AbstractModule;
@@ -28,25 +25,28 @@ import de.devsurf.injection.guice.scanner.ClasspathScanner;
 import de.devsurf.injection.guice.scanner.PackageFilter;
 import de.devsurf.injection.guice.scanner.StartupModule;
 import de.devsurf.injection.guice.scanner.features.ScannerFeature;
+import net.stickycode.metadata.MetadataResolverRegistry;
+import net.stickycode.metadata.ReflectiveMetadataResolverRegistry;
 
-public class StickyModule extends StartupModule {
+public class StickyModule
+    extends StartupModule {
+
   static {
     java.util.logging.Logger util = LogManager.getLogManager().getLogger("");
     for (java.util.logging.Handler handler : util.getHandlers())
       util.removeHandler(handler);
     SLF4JBridgeHandler.install();
   }
-  
-  static public Module bootstrapModule(PackageFilter... packageFilter) {
-    return new StickyModule(StickyClasspathScanner.class, packageFilter)
+
+  static public Module bootstrapModule() {
+    return new StickyModule(StickyClasspathScanner.class, PackageFilter.create("net.stickycode"))
         .addFeature(StickyFrameworkPluginMultibindingFeature.class)
         .addFeature(StickyFrameworkStereotypeScannerFeature.class)
         .disableStartupConfiguration();
   }
 
-  static public Module applicationModule(PackageFilter... packageFilter) {
-    return 
-        new StickyModule(StickyClasspathScanner.class, packageFilter)
+  static public Module applicationModule(String... packageFilter) {
+    return new StickyModule(StickyClasspathScanner.class, createFilters(packageFilter))
         .addFeature(StickyPluginMultibindingFeature.class)
         .addFeature(StickyStereotypeScannerFeature.class)
         .disableStartupConfiguration();
@@ -69,15 +69,26 @@ public class StickyModule extends StartupModule {
   @Override
   protected Multibinder<ScannerFeature> bindFeatures(Binder binder) {
     Multibinder<ScannerFeature> listeners = Multibinder.newSetBinder(binder,
-      ScannerFeature.class);
+        ScannerFeature.class);
 
     for (Class<? extends ScannerFeature> listener : _features) {
       listeners.addBinding().to(listener);
     }
-    
+
     binder.bind(MetadataResolverRegistry.class).to(ReflectiveMetadataResolverRegistry.class);
 
     return listeners;
   }
 
+  /**
+   * Always scan net.stickycode first
+   */
+  private static PackageFilter[] createFilters(String[] packages) {
+    PackageFilter[] filters = new PackageFilter[packages.length + 1];
+    filters[0] = PackageFilter.create("net.stickycode");
+    for (int i = 1; i < filters.length; i++) {
+      filters[i] = PackageFilter.create(packages[i - 1]);
+    }
+    return filters;
+  }
 }
