@@ -11,7 +11,7 @@
 
 	<groupId>net.stickycode.bootstrap</groupId>
 	<artifactId>sticky-bootstrap-guice4</artifactId>
-	<version>1.4-SNAPSHOT</version>
+	<version>1.5-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
 	<name>sticky-bootstrap-guice4-1</name>
