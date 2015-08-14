@@ -39,8 +39,8 @@ public class StickyFrameworkPluginMultibindingFeature
   }
 
   @Override
-  protected Class<? extends Annotation> getComponentAnnotation() {
-    return StickyPlugin.class;
+  protected Class<? extends Annotation>[] getComponentAnnotations() {
+    return new Class[] {StickyPlugin.class};
   }
 
   @Override
