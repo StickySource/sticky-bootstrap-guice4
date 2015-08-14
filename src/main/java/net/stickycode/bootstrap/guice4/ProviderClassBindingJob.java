@@ -1,4 +1,4 @@
-package net.stickycode.bootstrap.guice3;
+package net.stickycode.bootstrap.guice4;
 
 import com.google.inject.Scope;
 

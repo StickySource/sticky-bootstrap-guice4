@@ -1,4 +1,4 @@
-package net.stickycode.bootstrap.guice3;
+package net.stickycode.bootstrap.guice4;
 /**
  * Copyright (C) 2010 Daniel Manzke <daniel.manzke@googlemail.com>
  *

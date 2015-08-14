@@ -1,4 +1,4 @@
-package net.stickycode.bootstrap.guice3;
+package net.stickycode.bootstrap.guice4;
 
 import java.io.BufferedInputStream;
 import java.io.File;
