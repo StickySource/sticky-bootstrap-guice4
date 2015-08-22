@@ -12,83 +12,205 @@
  */
 package net.stickycode.bootstrap.guice4;
 
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.LogManager;
 
+import javax.inject.Provider;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.slf4j.bridge.SLF4JBridgeHandler;
 
 import com.google.inject.AbstractModule;
-import com.google.inject.Binder;
-import com.google.inject.Module;
+import com.google.inject.MembersInjector;
+import com.google.inject.Scope;
+import com.google.inject.Scopes;
+import com.google.inject.TypeLiteral;
+import com.google.inject.binder.AnnotatedBindingBuilder;
+import com.google.inject.binder.LinkedBindingBuilder;
+import com.google.inject.binder.ScopedBindingBuilder;
+import com.google.inject.matcher.Matchers;
 import com.google.inject.multibindings.Multibinder;
+import com.google.inject.spi.TypeListener;
+import com.google.inject.util.Types;
 
-import de.devsurf.injection.guice.scanner.ClasspathScanner;
-import de.devsurf.injection.guice.scanner.PackageFilter;
-import de.devsurf.injection.guice.scanner.StartupModule;
-import de.devsurf.injection.guice.scanner.features.ScannerFeature;
-import net.stickycode.metadata.MetadataResolverRegistry;
-import net.stickycode.metadata.ReflectiveMetadataResolverRegistry;
+import io.github.lukehutch.fastclasspathscanner.FastClasspathScanner;
+import net.stickycode.bootstrap.ComponentContainer;
+import net.stickycode.reflector.Methods;
+import net.stickycode.stereotype.StickyComponent;
+import net.stickycode.stereotype.StickyDomain;
+import net.stickycode.stereotype.StickyPlugin;
 
 public class StickyModule
-    extends StartupModule {
+    extends AbstractModule {
+
+  private Logger log = LoggerFactory.getLogger(getClass());
+
+  private static boolean tellMeWhatsGoingOn;
 
   static {
     java.util.logging.Logger util = LogManager.getLogManager().getLogger("");
     for (java.util.logging.Handler handler : util.getHandlers())
       util.removeHandler(handler);
     SLF4JBridgeHandler.install();
+
+    tellMeWhatsGoingOn = new Boolean(System.getProperty("sticky.bootstrap.debug"));
   }
 
-  static public Module bootstrapModule() {
-    return new StickyModule(StickyClasspathScanner.class, PackageFilter.create("net.stickycode"))
-        .addFeature(StickyFrameworkPluginMultibindingFeature.class)
-        .addFeature(StickyFrameworkStereotypeScannerFeature.class)
-        .disableStartupConfiguration();
+  private FastClasspathScanner scanner;
+
+  public StickyModule(String... packageFilters) {
+    this.scanner = new FastClasspathScanner(packageFilters)
+        .scan();
   }
 
-  static public Module applicationModule(String... packageFilter) {
-    return new StickyModule(StickyClasspathScanner.class, createFilters(packageFilter))
-        .addFeature(StickyPluginMultibindingFeature.class)
-        .addFeature(StickyStereotypeScannerFeature.class)
-        .disableStartupConfiguration();
-  }
-
-  static public Module keyBuilderModule() {
-    return new AbstractModule() {
-
-      @Override
-      protected void configure() {
-        binder().requireExplicitBindings();
-      }
-    };
-  }
-
-  public StickyModule(Class<? extends ClasspathScanner> scanner, PackageFilter... filter) {
-    super(scanner, filter);
-  }
-
+  @SuppressWarnings("unchecked")
   @Override
-  protected Multibinder<ScannerFeature> bindFeatures(Binder binder) {
-    Multibinder<ScannerFeature> listeners = Multibinder.newSetBinder(binder,
-        ScannerFeature.class);
+  public void configure() {
+    log.debug("dynamically binding components, debug is suppressed set system propertye'sticky.bootstrap.debug' = true to trace");
+    binder().requireExplicitBindings();
+    binder().bind(ComponentContainer.class).to(Guice4ComponentContainer.class);
 
-    for (Class<? extends ScannerFeature> listener : _features) {
-      listeners.addBinding().to(listener);
+    for (String name : scanner.getNamesOfClassesWithMetaAnnotation(StickyComponent.class, StickyDomain.class, StickyPlugin.class)) {
+      @SuppressWarnings("rawtypes")
+      Class k = scanner.loadClass(name);
+      bind(k, scanner);
+    }
+  }
+
+  @SuppressWarnings({ "unchecked" })
+  private void bind(Class<Object> annotatedClass, FastClasspathScanner scanner) {
+    List<Class<?>> interfaces = collectInterfaces(annotatedClass);
+
+    Scope scope = deriveScope(annotatedClass, interfaces);
+
+    debug("bind {}", annotatedClass);
+    binder().bind(annotatedClass).in(scope);
+
+    for (Class<?> interf : interfaces) {
+      if (interf.isAssignableFrom(TypeListener.class))
+        bindListener(annotatedClass);
+      else
+        if (Provider.class.isAssignableFrom(interf))
+          bindProviderWorkaround((Class<Object>) annotatedClass, Scopes.NO_SCOPE);
+        else
+          bind(annotatedClass, (Class<Object>) interf, (Annotation) null, scope);
     }
 
-    binder.bind(MetadataResolverRegistry.class).to(ReflectiveMetadataResolverRegistry.class);
+    if (!Provider.class.isAssignableFrom(annotatedClass) && !MembersInjector.class.isAssignableFrom(annotatedClass))
+      for (Class<?> blah = annotatedClass; blah != null; blah = blah.getSuperclass())
+        for (Type type : blah.getGenericInterfaces()) {
+          if (type instanceof ParameterizedType) {
+            bindParameterizedType(annotatedClass, type);
+          }
+        }
+  }
 
-    return listeners;
+  private void debug(String message, Object... paraemeters) {
+    if (tellMeWhatsGoingOn)
+      log.debug(message, paraemeters);
+  }
+
+  private <T, V extends T> void bind(Class<V> implementationClass, Class<T> contract,
+      Annotation annotation, Scope scope) {
+    List<String> implementors = scanner.getNamesOfClassesImplementing(contract);
+    implementors.removeAll(scanner.getNamesOfSuperclassesOf(implementationClass));
+    if (implementors.size() == 1) {
+      debug("bind {} to {}", implementationClass, contract);
+      LinkedBindingBuilder<T> builder = binder().bind(contract);
+      if (annotation != null) {
+        builder = ((AnnotatedBindingBuilder<T>) builder).annotatedWith(annotation);
+      }
+      ScopedBindingBuilder scopedBindingBuilder = builder.to(implementationClass);
+      if (scope != null) {
+        scopedBindingBuilder.in(scope);
+      }
+    }
+    else {
+      debug("only multi binding {} to {} due to many implementations {}", implementationClass, contract, implementors);
+    }
+    debug("multibind {} to {}", implementationClass, contract);
+    Multibinder.newSetBinder(binder(), contract).addBinding().to(implementationClass);
   }
 
   /**
-   * Always scan net.stickycode first
+   * This nasty code is to workaround the bug fixed by (NOTE its says closed but its not fixed yet) in javac. Without these casts
+   * javac will fail while ecj will be fine.
    */
-  private static PackageFilter[] createFilters(String[] packages) {
-    PackageFilter[] filters = new PackageFilter[packages.length + 1];
-    filters[0] = PackageFilter.create("net.stickycode");
-    for (int i = 1; i < filters.length; i++) {
-      filters[i] = PackageFilter.create(packages[i - 1]);
+  @SuppressWarnings("unchecked")
+  private void bindProviderWorkaround(Class<Object> annotatedClass, Scope scope) {
+    Class<Object> annotatedClass2 = annotatedClass;
+    if (annotatedClass2 instanceof Class)
+      bindProvider((Class<? extends Provider<Object>>) (Object) annotatedClass2, scope);
+  }
+
+  @SuppressWarnings("unchecked")
+  private <Y, T extends Provider<Y>> void bindProvider(Class<T> providerClass, Scope scope) {
+    Method m = Methods.find(providerClass, "get");
+    // ParameterizedType t = Types.providerOf();
+    TypeLiteral<T> tl = (TypeLiteral<T>) TypeLiteral.get(providerClass);
+    debug("bind {} to provider {}", m.getReturnType(), tl);
+    binder().bind((Class<Y>) m.getReturnType())
+        .toProvider(tl).in(scope);
+  }
+
+  @SuppressWarnings({ "rawtypes", "unchecked" })
+  protected void bindParameterizedType(Class<?> annotatedClass, Type type) {
+    Type wildcard = Types.subtypeOf(Object.class);
+    Type rawType = ((ParameterizedType) type).getRawType();
+    Type target = Types.newParameterizedType(rawType, wildcard);
+    TypeLiteral literal = TypeLiteral.get(target);
+    debug("multi bind paramterized type {} to {}", literal, annotatedClass);
+    Multibinder.newSetBinder(binder(), literal).addBinding().to(annotatedClass);
+  }
+
+  private void bindListener(Class<Object> annotatedClass) {
+    TypeListener typeListener = typeListener(annotatedClass);
+    binder().requestInjection(typeListener);
+    debug("bind {} as type listener", typeListener);
+    binder().bindListener(Matchers.any(), typeListener);
+  }
+
+  private TypeListener typeListener(Class<Object> annotatedClass) {
+    try {
+      return (TypeListener) annotatedClass.newInstance();
     }
-    return filters;
+    catch (InstantiationException e) {
+      throw new RuntimeException(e);
+    }
+    catch (IllegalAccessException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  private Scope deriveScope(Class<Object> annotatedClass, List<Class<?>> interfaces) {
+    if (scanner.getNamesOfClassesWithMetaAnnotation(StickyDomain.class).contains(annotatedClass.getName()))
+      return Scopes.NO_SCOPE;
+
+    return Scopes.SINGLETON;
+  }
+
+  private List<Class<?>> collectInterfaces(Class<Object> annotatedClass) {
+    List<Class<?>> interfaces = new ArrayList<Class<?>>();
+    for (Class<?> base = annotatedClass; base != null; base = base.getSuperclass())
+      for (Class<?> class1 : base.getInterfaces()) {
+        interfaces.add(class1);
+        processInterface(class1, interfaces);
+      }
+
+    debug("found {} with {}", annotatedClass, interfaces);
+    return interfaces;
+  }
+
+  private void processInterface(Class<?> target, List<Class<?>> interfaces) {
+    for (Class<?> class1 : target.getInterfaces()) {
+      interfaces.add(class1);
+      processInterface(class1, interfaces);
+    }
   }
 }

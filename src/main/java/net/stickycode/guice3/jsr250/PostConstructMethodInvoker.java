@@ -15,8 +15,7 @@ public class PostConstructMethodInvoker
 {
 
   private Logger log = LoggerFactory.getLogger(getClass());
-  
-  @SuppressWarnings("unchecked")
+
   public PostConstructMethodInvoker() {
     super(PostConstruct.class);
   }

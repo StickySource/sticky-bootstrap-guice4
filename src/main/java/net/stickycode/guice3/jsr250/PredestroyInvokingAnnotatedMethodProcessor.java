@@ -19,7 +19,6 @@ public class PredestroyInvokingAnnotatedMethodProcessor
 
   private Set<Object> seen = new HashSet<Object>();
 
-  @SuppressWarnings("unchecked")
   public PredestroyInvokingAnnotatedMethodProcessor() {
     super(PreDestroy.class);
   }
@@ -42,7 +41,7 @@ public class PredestroyInvokingAnnotatedMethodProcessor
       log.error("failed to destroy {}", e.getCause());
       throw new RuntimeException(e);
     }
-    
+
     log.info("predestroy {}.{}", target.getClass().getName(), method.getName());
     seen.add(target);
   }

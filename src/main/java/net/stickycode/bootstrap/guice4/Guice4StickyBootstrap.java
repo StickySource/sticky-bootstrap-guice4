@@ -1,9 +1,5 @@
 package net.stickycode.bootstrap.guice4;
 
-import static net.stickycode.bootstrap.guice4.StickyModule.applicationModule;
-import static net.stickycode.bootstrap.guice4.StickyModule.bootstrapModule;
-import static net.stickycode.bootstrap.guice4.StickyModule.keyBuilderModule;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,22 +16,10 @@ public class Guice4StickyBootstrap
 
   private Injector injector;
 
-  public Guice4StickyBootstrap() {
-    this.injector = Guice.createInjector(
-        bootstrapModule(),
-        keyBuilderModule());
-  }
-
-  public static Injector createInjector(Injector injector, String... packages) {
-    return injector
-        .createChildInjector(
-            applicationModule(packages));
-  }
-
   @Override
   public StickyBootstrap scan(String... packages) {
-    this.injector = injector.createChildInjector(
-        applicationModule(packages));
+    this.injector = Guice.createInjector(
+        new StickyModule(packages));
     return this;
   }
 
