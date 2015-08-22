@@ -72,7 +72,7 @@ public class StickyModule
   @SuppressWarnings("unchecked")
   @Override
   public void configure() {
-    log.debug("dynamically binding components, debug is suppressed set system propertye'sticky.bootstrap.debug' = true to trace");
+    log.debug("dynamically binding components, to trace the binding set system property -Dsticky.bootstrap.debug=true");
     binder().requireExplicitBindings();
     binder().bind(ComponentContainer.class).to(Guice4ComponentContainer.class);
 
