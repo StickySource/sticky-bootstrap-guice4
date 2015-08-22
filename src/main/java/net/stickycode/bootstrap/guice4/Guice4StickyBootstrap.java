@@ -7,6 +7,7 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.ProvisionException;
 
+import io.github.lukehutch.fastclasspathscanner.FastClasspathScanner;
 import net.stickycode.bootstrap.StickyBootstrap;
 
 public class Guice4StickyBootstrap
@@ -18,8 +19,10 @@ public class Guice4StickyBootstrap
 
   @Override
   public StickyBootstrap scan(String... packages) {
-    this.injector = Guice.createInjector(
-        new StickyModule(packages));
+    log.debug("scanning {}", new Object[] { packages });
+    FastClasspathScanner scanner = new FastClasspathScanner(packages).scan();
+
+    this.injector = Guice.createInjector(new StickyModule(scanner));
     return this;
   }
 

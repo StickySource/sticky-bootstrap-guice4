@@ -61,31 +61,34 @@ public class StickyModule
 
     tellMeWhatsGoingOn = new Boolean(System.getProperty("sticky.bootstrap.debug"));
     if (!tellMeWhatsGoingOn)
-      LoggerFactory.getLogger(StickyModule.class).debug("Enable binding trace with -Dsticky.bootstrap.debug=true" );
+      LoggerFactory.getLogger(StickyModule.class).debug("Enable binding trace with -Dsticky.bootstrap.debug=true");
   }
 
   private FastClasspathScanner scanner;
 
-  private String[] packageFilters;
-
-  public StickyModule(String... packageFilters) {
-    this.packageFilters = packageFilters;
+  public StickyModule(FastClasspathScanner scanner) {
+    this.scanner = scanner;
   }
 
   @SuppressWarnings("unchecked")
   @Override
   public void configure() {
-    log.debug("scanning {}", new Object[] {packageFilters});
-    this.scanner = new FastClasspathScanner(packageFilters).scan();
 
     binder().requireExplicitBindings();
     binder().bind(ComponentContainer.class).to(Guice4ComponentContainer.class);
 
-    for (String name : scanner.getNamesOfClassesWithMetaAnnotation(StickyComponent.class, StickyDomain.class, StickyPlugin.class)) {
+    for (String name : getComponentNames()) {
       @SuppressWarnings("rawtypes")
       Class k = scanner.loadClass(name);
       bind(k, scanner);
     }
+  }
+
+  List<String> getComponentNames() {
+    return scanner.getNamesOfClassesWithMetaAnnotation(
+        StickyComponent.class,
+        StickyPlugin.class,
+        StickyDomain.class);
   }
 
   @SuppressWarnings({ "unchecked" })
@@ -99,8 +102,6 @@ public class StickyModule
     binder().bind(annotatedClass).in(scope);
 
     for (Class<?> interf : interfaces) {
-
-
 
       if (interf.isAssignableFrom(TypeListener.class))
         bindListener(annotatedClass);
