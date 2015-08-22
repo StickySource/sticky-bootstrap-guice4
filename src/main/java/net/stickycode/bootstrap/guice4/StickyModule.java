@@ -60,19 +60,24 @@ public class StickyModule
     SLF4JBridgeHandler.install();
 
     tellMeWhatsGoingOn = new Boolean(System.getProperty("sticky.bootstrap.debug"));
+    if (!tellMeWhatsGoingOn)
+      LoggerFactory.getLogger(StickyModule.class).debug("Enable binding trace with -Dsticky.bootstrap.debug=true" );
   }
 
   private FastClasspathScanner scanner;
 
+  private String[] packageFilters;
+
   public StickyModule(String... packageFilters) {
-    this.scanner = new FastClasspathScanner(packageFilters)
-        .scan();
+    this.packageFilters = packageFilters;
   }
 
   @SuppressWarnings("unchecked")
   @Override
   public void configure() {
-    log.debug("dynamically binding components, to trace the binding set system property -Dsticky.bootstrap.debug=true");
+    log.debug("scanning {}", new Object[] {packageFilters});
+    this.scanner = new FastClasspathScanner(packageFilters).scan();
+
     binder().requireExplicitBindings();
     binder().bind(ComponentContainer.class).to(Guice4ComponentContainer.class);
 
@@ -85,6 +90,7 @@ public class StickyModule
 
   @SuppressWarnings({ "unchecked" })
   private void bind(Class<Object> annotatedClass, FastClasspathScanner scanner) {
+
     List<Class<?>> interfaces = collectInterfaces(annotatedClass);
 
     Scope scope = deriveScope(annotatedClass, interfaces);
@@ -93,6 +99,9 @@ public class StickyModule
     binder().bind(annotatedClass).in(scope);
 
     for (Class<?> interf : interfaces) {
+
+
+
       if (interf.isAssignableFrom(TypeListener.class))
         bindListener(annotatedClass);
       else
@@ -118,6 +127,12 @@ public class StickyModule
 
   private <T, V extends T> void bind(Class<V> implementationClass, Class<T> contract,
       Annotation annotation, Scope scope) {
+
+    if (MembersInjector.class.isAssignableFrom(contract)) {
+      debug("ignore MembersInjector interfaces on {} its internal to guice", implementationClass);
+      return;
+    }
+
     List<String> implementors = scanner.getNamesOfClassesImplementing(contract);
     implementors.removeAll(scanner.getNamesOfSuperclassesOf(implementationClass));
     if (implementors.size() == 1) {
