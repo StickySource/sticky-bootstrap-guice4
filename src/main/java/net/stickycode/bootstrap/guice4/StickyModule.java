@@ -85,7 +85,7 @@ public class StickyModule
   }
 
   List<String> getComponentNames() {
-    return scanner.getNamesOfClassesWithMetaAnnotation(
+    return scanner.getNamesOfClassesWithMetaAnnotationsAnyOf(
         StickyComponent.class,
         StickyPlugin.class,
         StickyDomain.class);
