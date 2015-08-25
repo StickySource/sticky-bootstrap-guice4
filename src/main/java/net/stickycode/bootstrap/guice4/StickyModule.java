@@ -85,7 +85,7 @@ public class StickyModule
   }
 
   List<String> getComponentNames() {
-    return scanner.getNamesOfClassesWithMetaAnnotationsAnyOf(
+    return scanner.getNamesOfClassesWithAnnotationsAnyOf(
         StickyComponent.class,
         StickyPlugin.class,
         StickyDomain.class);
@@ -107,7 +107,7 @@ public class StickyModule
         bindListener(annotatedClass);
       else
         if (Provider.class.isAssignableFrom(interf))
-          bindProviderWorkaround((Class<Object>) annotatedClass, Scopes.NO_SCOPE);
+          bindProviderWorkaround(annotatedClass, Scopes.NO_SCOPE);
         else
           bind(annotatedClass, (Class<Object>) interf, (Annotation) null, scope);
     }
@@ -169,7 +169,7 @@ public class StickyModule
   private <Y, T extends Provider<Y>> void bindProvider(Class<T> providerClass, Scope scope) {
     Method m = Methods.find(providerClass, "get");
     // ParameterizedType t = Types.providerOf();
-    TypeLiteral<T> tl = (TypeLiteral<T>) TypeLiteral.get(providerClass);
+    TypeLiteral<T> tl = TypeLiteral.get(providerClass);
     debug("bind {} to provider {}", m.getReturnType(), tl);
     binder().bind((Class<Y>) m.getReturnType())
         .toProvider(tl).in(scope);
@@ -205,7 +205,7 @@ public class StickyModule
   }
 
   private Scope deriveScope(Class<Object> annotatedClass, List<Class<?>> interfaces) {
-    if (scanner.getNamesOfClassesWithMetaAnnotation(StickyDomain.class).contains(annotatedClass.getName()))
+    if (scanner.getNamesOfClassesWithAnnotation(StickyDomain.class).contains(annotatedClass.getName()))
       return Scopes.NO_SCOPE;
 
     return Scopes.SINGLETON;
