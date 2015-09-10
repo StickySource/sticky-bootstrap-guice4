@@ -92,7 +92,7 @@ public class StickyModule
   }
 
   @SuppressWarnings({ "unchecked" })
-  private void bind(Class<Object> annotatedClass, FastClasspathScanner scanner) {
+  private void bind(Class<Object> annotatedClass, FastClasspathScanner s) {
 
     List<Class<?>> interfaces = collectInterfaces(annotatedClass);
 

@@ -46,4 +46,5 @@ public class Guice4StickyBootstrap
     return injector.getInstance(type);
   }
 
+
 }
