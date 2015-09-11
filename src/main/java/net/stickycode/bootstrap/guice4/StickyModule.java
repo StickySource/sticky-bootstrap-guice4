@@ -30,6 +30,7 @@ import com.google.inject.AbstractModule;
 import com.google.inject.MembersInjector;
 import com.google.inject.Scope;
 import com.google.inject.Scopes;
+import com.google.inject.Singleton;
 import com.google.inject.TypeLiteral;
 import com.google.inject.binder.AnnotatedBindingBuilder;
 import com.google.inject.binder.LinkedBindingBuilder;
@@ -59,7 +60,7 @@ public class StickyModule
       util.removeHandler(handler);
     SLF4JBridgeHandler.install();
 
-    tellMeWhatsGoingOn = new Boolean(System.getProperty("sticky.bootstrap.debug"));
+    tellMeWhatsGoingOn = new Boolean(System.getProperty("sticky.bootstrap.debug", "false"));
     if (!tellMeWhatsGoingOn)
       LoggerFactory.getLogger(StickyModule.class).debug("Enable binding trace with -Dsticky.bootstrap.debug=true");
   }
@@ -85,10 +86,30 @@ public class StickyModule
   }
 
   List<String> getComponentNames() {
-    return scanner.getNamesOfClassesWithAnnotationsAnyOf(
+    if (tellMeWhatsGoingOn)
+      debugComponentAnnotatationsThatAreBeingLookedFor();
+
+    return scanner.getNamesOfClassesWithAnnotationsAnyOf(componentMetaAnnotations());
+  }
+
+  @SuppressWarnings("unchecked")
+  private void debugComponentAnnotatationsThatAreBeingLookedFor() {
+    List<String> annotations = new ArrayList<>();
+    for (Class<? extends Annotation> a : componentMetaAnnotations()) {
+      annotations.add(a.getName());
+      annotations.addAll(scanner.getNamesOfAnnotationsWithMetaAnnotation(a));
+    }
+    debug("Using component annotations {} note that you must scan the packages of all the meta annotated annotations to pick them all up. This especially true of net.stickycode.stereotype.", annotations);
+  }
+
+  @SuppressWarnings("rawtypes")
+  private Class[] componentMetaAnnotations() {
+    return new Class[] {
         StickyComponent.class,
         StickyPlugin.class,
-        StickyDomain.class);
+        StickyDomain.class,
+        Singleton.class,
+        javax.inject.Singleton.class };
   }
 
   @SuppressWarnings({ "unchecked" })
