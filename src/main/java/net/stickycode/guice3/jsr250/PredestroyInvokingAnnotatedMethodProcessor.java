@@ -7,10 +7,10 @@ import java.util.Set;
 
 import javax.annotation.PreDestroy;
 
-import net.stickycode.reflector.AnnotatedMethodProcessor;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import net.stickycode.reflector.AnnotatedMethodProcessor;
 
 public class PredestroyInvokingAnnotatedMethodProcessor
    extends AnnotatedMethodProcessor {
@@ -38,7 +38,7 @@ public class PredestroyInvokingAnnotatedMethodProcessor
       throw new RuntimeException(e);
     }
     catch (InvocationTargetException e) {
-      log.error("failed to destroy {}", e.getCause());
+      log.error("failed to destroy {}.{}",target.getClass().getName(), method.getName(), e.getCause());
       throw new RuntimeException(e);
     }
 

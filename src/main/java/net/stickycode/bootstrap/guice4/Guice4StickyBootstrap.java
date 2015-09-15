@@ -16,12 +16,19 @@ import com.google.inject.ProvisionException;
 
 import io.github.lukehutch.fastclasspathscanner.FastClasspathScanner;
 import net.stickycode.bootstrap.StickyBootstrap;
-import net.stickycode.guice3.jsr250.Jsr250Module;
+import net.stickycode.bootstrap.StickySystemStartup;
 
 public class Guice4StickyBootstrap
     implements StickyBootstrap {
+  static Boolean tellMeWhatsGoingOn;
 
   private Logger log = LoggerFactory.getLogger(getClass());
+
+  static {
+    tellMeWhatsGoingOn = new Boolean(System.getProperty("sticky.bootstrap.debug", "false"));
+    if (!tellMeWhatsGoingOn)
+      LoggerFactory.getLogger(Guice4StickyBootstrap.class).debug("Enable binding trace with -Dsticky.bootstrap.debug=true");
+  }
 
   private List<String> packages = new ArrayList<>();
 
@@ -32,6 +39,8 @@ public class Guice4StickyBootstrap
   private Injector injector;
 
   private Object $lock = new Object();
+
+  private Injector parentInjector;
 
   @Override
   public StickyBootstrap scan(String... scan) {
@@ -70,15 +79,19 @@ public class Guice4StickyBootstrap
   private Injector getInjector() {
     synchronized ($lock) {
       if (injector == null) {
-        log.debug("scanning {}", packages);
-        FastClasspathScanner scanner = new FastClasspathScanner(packages.toArray(new String[packages.size()])).scan();
-        StickyModule stickyModule = new StickyModule(scanner);
-        BootstrapMetadataModule metadataModule = new BootstrapMetadataModule(metadata);
         List<Module> m = new ArrayList<>();
-        m.add(stickyModule);
-        m.add(metadataModule);
+
+        m.add(new BootstrapMetadataModule(metadata));
         m.addAll(modules);
-        this.injector = Guice.createInjector(m);
+        if (!packages.isEmpty()) {
+          log.debug("scanning {}", packages);
+          FastClasspathScanner scanner = new FastClasspathScanner(packages.toArray(new String[packages.size()])).scan();
+          parentInjector = Guice.createInjector(new StickyFrameworkModule(scanner));
+          m.add(new StickyApplicationModule(scanner));
+          this.injector = parentInjector.createChildInjector(m);
+        }
+        else
+          this.injector = Guice.createInjector(m);
       }
 
       return injector;
@@ -112,8 +125,10 @@ public class Guice4StickyBootstrap
 
   @Override
   public void shutdown() {
-    if (injector != null)
-      Jsr250Module.preDestroy(log, injector);
+    if (injector != null) {
+      if (injector.getExistingBinding(Key.get(StickySystemStartup.class)) != null)
+        injector.getInstance(StickySystemStartup.class).shutdown();
+    }
   }
 
   @Override
@@ -122,5 +137,12 @@ public class Guice4StickyBootstrap
       modules.add((Module) extension);
     else
       throw new UnknownExtensionFailure(extension);
+  }
+
+  @Override
+  public void start() {
+    Injector i = getInjector();
+    if (i.getExistingBinding(Key.get(StickySystemStartup.class)) != null)
+      i.getInstance(StickySystemStartup.class).start();
   }
 }

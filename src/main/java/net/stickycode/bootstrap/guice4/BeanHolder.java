@@ -36,4 +36,9 @@ public class BeanHolder {
     return name;
   }
 
+  @Override
+  public String toString() {
+    return type.getSimpleName() + "@" + name;
+  }
+
 }

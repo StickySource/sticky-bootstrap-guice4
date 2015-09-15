@@ -46,6 +46,11 @@ public class Guice4ComponentContainer
     }
   }
 
+  @Override
+  public boolean canFind(Class<?> type) {
+    return injector.getExistingBinding(Key.get(type)) != null;
+  }
+
   @SuppressWarnings("unchecked")
   // wrapping a T in a Set safely returns a Set<T>
   static <T> TypeLiteral<Set<T>> setOf(TypeLiteral<T> elementType) {

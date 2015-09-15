@@ -5,10 +5,10 @@ import java.lang.reflect.Method;
 
 import javax.annotation.PostConstruct;
 
-import net.stickycode.reflector.AnnotatedMethodProcessor;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import net.stickycode.reflector.AnnotatedMethodProcessor;
 
 public class PostConstructMethodInvoker
     extends AnnotatedMethodProcessor
