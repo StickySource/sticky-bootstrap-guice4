@@ -12,10 +12,45 @@
  */
 package net.stickycode.bootstrap.guice4;
 
+import com.google.inject.Provider;
+
 public class BeanHolder {
 
+  @SuppressWarnings("rawtypes")
+  private final class InstanceProvider
+      implements Provider {
+
+    private final BeanHolder b;
+
+    private InstanceProvider(BeanHolder b) {
+      this.b = b;
+    }
+
+    @Override
+    public Object get() {
+      return b.getInstance();
+    }
+  }
+  @SuppressWarnings("rawtypes")
+  private final class GuiceProvider
+      implements Provider {
+
+    private final javax.inject.Provider b;
+
+    private GuiceProvider(javax.inject.Provider b) {
+      this.b = b;
+    }
+
+    @Override
+    public Object get() {
+      return b.get();
+    }
+  }
+
   private Object instance;
+
   private Class<?> type;
+
   private String name;
 
   public BeanHolder(String name, Object bean, Class<?> type) {
@@ -39,6 +74,13 @@ public class BeanHolder {
   @Override
   public String toString() {
     return type.getSimpleName() + "@" + name;
+  }
+
+  public Provider getProvider() {
+    if (instance instanceof javax.inject.Provider)
+      return new GuiceProvider((javax.inject.Provider) instance);
+
+    return new InstanceProvider(this);
   }
 
 }

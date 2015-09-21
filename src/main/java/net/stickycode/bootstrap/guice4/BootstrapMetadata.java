@@ -15,6 +15,8 @@ package net.stickycode.bootstrap.guice4;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.inject.Provider;
+
 import com.google.inject.Module;
 
 /**
@@ -70,6 +72,10 @@ public class BootstrapMetadata {
 
   List<Module> getModules() {
     return modules;
+  }
+
+  public void registerProvider(String name, Provider<Object> provider, Class<?> type) {
+    beans.add(new BeanHolder(name, provider, type));
   }
 
 }

@@ -5,6 +5,8 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
+import javax.inject.Provider;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -144,5 +146,10 @@ public class Guice4StickyBootstrap
     Injector i = getInjector();
     if (i.getExistingBinding(Key.get(StickySystemStartup.class)) != null)
       i.getInstance(StickySystemStartup.class).start();
+  }
+
+  @Override
+  public void registerProvider(String name, Provider<Object> provider, Class<?> type) {
+    metadata.registerProvider(name, provider, type);
   }
 }

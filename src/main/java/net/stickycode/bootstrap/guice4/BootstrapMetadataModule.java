@@ -17,7 +17,6 @@ import org.slf4j.LoggerFactory;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Module;
-import com.google.inject.Provider;
 import com.google.inject.Singleton;
 import com.google.inject.TypeLiteral;
 import com.google.inject.multibindings.Multibinder;
@@ -26,22 +25,6 @@ import net.stickycode.bootstrap.ComponentContainer;
 
 public class BootstrapMetadataModule
     extends AbstractModule {
-
-  @SuppressWarnings("rawtypes")
-  private final class InstanceProvider
-      implements Provider {
-
-    private final BeanHolder b;
-
-    private InstanceProvider(BeanHolder b) {
-      this.b = b;
-    }
-
-    @Override
-    public Object get() {
-      return b.getInstance();
-    }
-  }
 
   private Logger log = LoggerFactory.getLogger(getClass());
 
@@ -69,7 +52,7 @@ public class BootstrapMetadataModule
     for (final BeanHolder b : manifest.getBeans()) {
       TypeLiteral type = TypeLiteral.get(b.getType());
       debug("binding type '{}' to instance '{}'", type, b.getInstance());
-      bind(type).toProvider(new InstanceProvider(b));
+      bind(type).toProvider(b.getProvider());
       bindInterfaces(type, b, b.getType().getInterfaces());
     }
     debug("types {}", manifest.getTypes());
@@ -91,8 +74,8 @@ public class BootstrapMetadataModule
   private void bindInterfaces(TypeLiteral type, BeanHolder b, Class<?>[] interfaces) {
     debug("binding {} to {}", type, interfaces);
     for (Class implemented : interfaces) {
-      Multibinder.newSetBinder(binder(), implemented).addBinding().toProvider(new InstanceProvider(b));
-      bind(implemented).toProvider(new InstanceProvider(b));
+      Multibinder.newSetBinder(binder(), implemented).addBinding().toProvider(b.getProvider());
+      bind(implemented).toProvider(b.getProvider());
       bindInterfaces(type, b, implemented.getInterfaces());
     }
   }
